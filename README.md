@@ -3,6 +3,10 @@
 Twitchでレイドを受けたときに、**配信主だけが見る画面**に相手の情報とリンクを出し、
 **公式シャウトアウトを自動送信**するブラウザツール。サーバー不要・単一HTML。
 
+公開URL: https://naruseaoivt.github.io/raid-panel/
+リポジトリ: NaruseAoiVT/raid-panel（Public / GitHub Pages）
+Twitchアプリ: MEDISIA RAID PANEL（公開クライアント / Broadcaster Suite）
+
 ## 構成
 
 | ファイル | 役割 |
