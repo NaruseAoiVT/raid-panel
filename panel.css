@@ -1,89 +1,316 @@
-/* RAID PANEL 共通スタイル。index.html と dock.html の両方が読む */
+/* RAID PANEL 共通スタイル。index.html と dock.html の両方が読む
+   ------------------------------------------------------------------
+   設計の下敷きは Apple のスタイルリファレンス（白基調・余白・書体主導）。
+   強調色だけ MEDISIA のピンク #FF0066 に差し替えてある。
+
+   色の使い分けは1色1役を守る。
+     #FF0066  塗りボタンと選択中の状態だけ。文字色・枠線には使わない
+     #CC0052  枠線ボタン・リンク・エラー文字。白地で 5.69:1 でAAを満たす
+   白文字 on #FF0066 は 3.86:1 なので、塗りボタンの文字は19px/600に固定する
+   （WCAGの大きい太字は3:1でよい）。ここを小さくすると基準を割る。
+
+   影は使わない。階層は面の色とヘアラインで作る。
+   唯一の例外がレイド主のアイコンで、白地に浮かせるための影を1つだけ許す。 */
+
 :root{
-  --bg:#12101a; --panel:#1b1826; --panel2:#221e30; --line:#2f2a40;
-  --fg:#ece9f4; --dim:#9990ad; --accent:#a970ff; --accent-fg:#fff;
-  --ok:#4ac26b; --warn:#e3b341; --err:#f2685c;
+  --white:#ffffff;
+  --frost:#f5f5f7;
+  --pebble:#e2e2e5;
+  --hairline:#d2d2d7;
+  --carbon:#1d1d1f;
+  --smoke:#333333;
+  --ash:#707070;
+  --mist:#858585;
+
+  --pink:#FF0066;
+  --pink-hover:#E0005B;
+  --pink-deep:#CC0052;
+
+  --bg:var(--white);
+  --surface:var(--frost);
+  --raised:var(--white);
+  --fg:var(--carbon);
+  --dim:var(--ash);
+  --line:var(--hairline);
+  --fill:var(--pebble);
+
+  --font-display:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI','Noto Sans JP',system-ui,sans-serif;
+  --font-text:'SF Pro Text',-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI','Noto Sans JP',system-ui,sans-serif;
+
+  --r-card:8px;
+  --r-pill:980px;
+
+  --s4:4px; --s8:8px; --s12:12px; --s16:16px;
+  --s20:20px; --s24:24px; --s40:40px; --s48:48px;
+
+  --shadow-product:rgba(0,0,0,.22) 3px 5px 30px 0px;
 }
-[data-theme="pastel"]{
-  --bg:#fdf6fa; --panel:#ffffff; --panel2:#fbf1f7; --line:#f0dfea;
-  --fg:#3f3548; --dim:#8d8095; --accent:#e07bb0; --accent-fg:#fff;
-  --ok:#4aa96c; --warn:#c99a2e; --err:#d9614f;
+
+/* OBSのドックは暗いアプリの中に置かれる。白が眩しい環境のための切り替え。
+   面の色だけ入れ替え、ピンクの役割は変えない */
+[data-theme="dark"]{
+  --bg:#000000;
+  --surface:#1d1d1f;
+  --raised:#2a2a2c;
+  --fg:#f5f5f7;
+  --dim:#858585;
+  --line:#333333;
+  --fill:#38383a;
+  --pink-deep:#FF4D8D;
+  --shadow-product:rgba(0,0,0,.5) 3px 5px 30px 0px;
 }
-[data-theme="mono"]{
-  --bg:#0e0e0e; --panel:#171717; --panel2:#1e1e1e; --line:#2c2c2c;
-  --fg:#ededed; --dim:#8f8f8f; --accent:#dcdcdc; --accent-fg:#111;
-  --ok:#7bbf8a; --warn:#c9b078; --err:#d98a80;
-}
+
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{margin:0;background:var(--bg);color:var(--fg);
-  font-family:"Hiragino Sans","Yu Gothic UI","Noto Sans JP",system-ui,sans-serif;
-  font-size:14px;line-height:1.6}
-button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel2);
-  color:var(--fg);border-radius:8px;padding:8px 14px}
-button:hover{border-color:var(--accent)}
-button.primary{background:var(--accent);color:var(--accent-fg);border-color:transparent;font-weight:700}
-button.ghost{background:transparent}
-button:disabled{opacity:.4;cursor:not-allowed}
-input,textarea{font:inherit;background:var(--panel2);color:var(--fg);
-  border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
-a{color:var(--accent)}
-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
-header h1{font-size:15px;margin:0;letter-spacing:.16em}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--fg);
+  font-family:var(--font-text);
+  font-size:17px;
+  line-height:1.47;
+  letter-spacing:-.016em;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- 操作部品 ---------- */
+
+/* 既定は白地にヘアラインのピル。中立の操作はすべてこれ */
+button{
+  font:inherit;
+  font-size:14px;
+  font-weight:400;
+  letter-spacing:-.016em;
+  cursor:pointer;
+  border:1px solid var(--line);
+  background:var(--raised);
+  color:var(--fg);
+  border-radius:var(--r-pill);
+  padding:9px 18px;
+  transition:background .15s,border-color .15s,color .15s;
+}
+button:hover{background:var(--fill)}
+
+/* 枠線ピル。塗りボタンと対で使う二番手の操作 */
+button.primary{
+  background:transparent;
+  border-color:var(--pink-deep);
+  color:var(--pink-deep);
+  font-weight:400;
+}
+button.primary:hover{background:rgba(255,0,102,.06)}
+
+button.ghost{
+  background:transparent;
+  border-color:transparent;
+  color:var(--dim);
+  font-size:12px;
+  padding:8px 12px;
+}
+button.ghost:hover{background:var(--fill);color:var(--fg)}
+
+button:disabled{opacity:.32;cursor:not-allowed}
+button:disabled:hover{background:transparent}
+
+input,textarea{
+  font:inherit;
+  font-size:14px;
+  letter-spacing:-.016em;
+  background:var(--raised);
+  color:var(--fg);
+  border:1px solid var(--line);
+  border-radius:var(--r-card);
+  padding:10px 12px;
+  width:100%;
+}
+input:focus,textarea:focus{outline:2px solid var(--pink);outline-offset:-1px;border-color:transparent}
+input::placeholder{color:var(--mist)}
+
+a{color:var(--pink-deep);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ---------- ヘッダー ---------- */
+
+header{
+  display:flex;
+  align-items:center;
+  gap:var(--s16);
+  flex-wrap:wrap;
+  padding:var(--s12) var(--s24);
+  background:var(--bg);
+  border-bottom:1px solid var(--line);
+}
+header h1{
+  font-family:var(--font-display);
+  font-size:21px;
+  font-weight:600;
+  letter-spacing:-.005em;
+  margin:0;
+}
 header .sp{flex:1}
-.dot{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--dim)}
-.dot i{width:8px;height:8px;border-radius:50%;background:var(--err);display:block}
-.dot.on i{background:var(--ok)}
-main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;padding:16px;align-items:start}
+
+/* 接続中のランプ。点いている状態はピンクの塗りで示す（選択中の状態） */
+.dot{display:inline-flex;align-items:center;gap:6px;font-size:12px;letter-spacing:-.022em;color:var(--dim)}
+.dot i{width:7px;height:7px;border-radius:50%;background:var(--line);display:block}
+.dot.on i{background:var(--pink)}
+.dot.on{color:var(--fg)}
+
+/* ---------- 面 ---------- */
+
+main{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 380px;
+  gap:var(--s24);
+  padding:var(--s24);
+  align-items:start;
+}
 @media(max-width:980px){main{grid-template-columns:1fr}}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
-.panel h2{font-size:12px;letter-spacing:.14em;color:var(--dim);margin:0 0 12px;font-weight:700}
-.stack{display:flex;flex-direction:column;gap:10px}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.muted{color:var(--dim);font-size:12px}
 
-#empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:340px;color:var(--dim);gap:10px;text-align:center}
-#empty .big{font-size:34px;letter-spacing:.2em}
+.panel{
+  background:var(--surface);
+  border-radius:var(--r-card);
+  padding:var(--s24);
+  margin-bottom:var(--s16);
+}
+.panel h2{
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.06em;
+  color:var(--dim);
+  margin:0 0 var(--s16);
+  text-transform:uppercase;
+}
+.stack{display:flex;flex-direction:column;gap:var(--s12)}
+.row{display:flex;gap:var(--s8);align-items:center;flex-wrap:wrap}
+.muted{color:var(--dim);font-size:12px;line-height:1.5;letter-spacing:-.022em}
 
-#card .top{display:flex;gap:16px;align-items:center}
-#card img.av{width:88px;height:88px;border-radius:50%;background:var(--panel2);
-  border:2px solid var(--accent);object-fit:cover;flex:none}
-#card .name{font-size:26px;font-weight:800;line-height:1.25;word-break:break-word}
-#card .cnt{color:var(--accent);font-weight:700}
-.meta{margin-top:14px;display:grid;grid-template-columns:92px 1fr;gap:6px 12px;font-size:13px}
+/* ---------- 待機中 ---------- */
+
+#empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:380px;gap:var(--s12);text-align:center;color:var(--dim);
+}
+#empty .big{
+  font-family:var(--font-display);
+  font-size:40px;font-weight:300;line-height:1.14;letter-spacing:.011em;
+  color:var(--mist);
+}
+#empty div:not(.big){font-size:17px}
+#empty .sub{font-size:12px}
+
+/* ---------- レイドのカード ---------- */
+
+#card{text-align:center;padding:var(--s16) 0 var(--s8)}
+#card .top{
+  display:flex;flex-direction:column;align-items:center;gap:var(--s16);
+}
+#card img.av{
+  width:120px;height:120px;border-radius:50%;
+  background:var(--fill);object-fit:cover;flex:none;
+  box-shadow:var(--shadow-product);
+}
+#card .name{
+  font-family:var(--font-display);
+  font-size:40px;font-weight:600;line-height:1.14;letter-spacing:.011em;
+  word-break:break-word;
+}
+#card .top > div > div:last-child{
+  font-size:21px;font-weight:300;line-height:1.24;letter-spacing:-.005em;color:var(--fg);
+}
+#card .cnt{font-weight:600;color:var(--fg)}
+
+.live{
+  display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;
+  padding:2px 10px;border-radius:var(--r-pill);
+  background:var(--pink);color:#fff;margin-left:var(--s8);vertical-align:middle;
+}
+
+/* 相手の情報。罫線ではなくラベルの弱さで区切る */
+.meta{
+  margin:var(--s24) auto 0;max-width:520px;
+  display:grid;grid-template-columns:96px 1fr;gap:var(--s8) var(--s16);
+  font-size:14px;line-height:1.29;letter-spacing:-.022em;text-align:left;
+}
 .meta dt{color:var(--dim)}
 .meta dd{margin:0;word-break:break-word}
-.live{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;
-  background:var(--err);color:#fff;margin-left:8px;vertical-align:middle}
-.linkbtn{display:block;margin-top:16px;text-align:center;text-decoration:none;
-  background:var(--accent);color:var(--accent-fg);font-weight:800;font-size:17px;
-  padding:16px;border-radius:12px;letter-spacing:.04em}
-.linkbtn small{display:block;font-weight:400;opacity:.85;font-size:12px;letter-spacing:0}
-#soStatus{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--panel2);
-  border-left:3px solid var(--dim);font-size:13px}
-#soStatus.ok{border-color:var(--ok)} #soStatus.warn{border-color:var(--warn)} #soStatus.err{border-color:var(--err)}
-textarea#thanks{height:96px;resize:vertical;margin-top:10px}
 
-#hist{list-style:none;margin:0;padding:0;max-height:230px;overflow:auto}
-#hist li{display:flex;gap:8px;align-items:baseline;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13px}
+/* ここが唯一の塗りボタン。文字は19px/600より小さくしない（コントラスト） */
+.linkbtn{
+  display:block;margin:var(--s24) auto 0;max-width:520px;
+  text-align:center;text-decoration:none;
+  background:var(--pink);color:#fff;
+  font-size:19px;font-weight:600;letter-spacing:-.01em;
+  padding:16px var(--s24);border-radius:var(--r-pill);
+}
+.linkbtn:hover{background:var(--pink-hover);text-decoration:none}
+.linkbtn small{display:block;font-weight:400;font-size:12px;opacity:.85;letter-spacing:-.022em;margin-top:2px}
+
+/* 送信の状態。色で騒がず、左のヘアラインと文字で示す */
+#soStatus{
+  margin:var(--s16) auto 0;max-width:520px;text-align:left;
+  padding:10px var(--s16);border-radius:var(--r-card);
+  background:var(--raised);border-left:2px solid var(--line);
+  font-size:14px;line-height:1.29;letter-spacing:-.022em;color:var(--dim);
+}
+#soStatus.ok{border-left-color:var(--fg);color:var(--fg)}
+#soStatus.warn{border-left-color:var(--mist)}
+#soStatus.err{border-left-color:var(--pink-deep);color:var(--pink-deep)}
+
+#card .row{justify-content:center;margin-top:var(--s12)}
+#btnSo.primary{border-color:var(--pink-deep);color:var(--pink-deep)}
+
+textarea#thanks{
+  height:104px;resize:vertical;margin:var(--s16) auto 0;max-width:520px;display:block;
+  text-align:left;font-size:14px;line-height:1.5;
+}
+
+/* ---------- 履歴 ---------- */
+
+#hist{list-style:none;margin:0;padding:0;max-height:260px;overflow:auto}
+#hist li{
+  display:flex;gap:var(--s8);align-items:baseline;
+  padding:8px 0;border-bottom:1px solid var(--line);
+  font-size:14px;letter-spacing:-.022em;
+}
 #hist li:last-child{border-bottom:none}
-#hist li.day{border-bottom:none;padding-top:10px;color:var(--dim);font-size:11px;letter-spacing:.08em}
+#hist li.day{
+  border-bottom:none;padding:var(--s16) 0 var(--s4);
+  color:var(--dim);font-size:12px;letter-spacing:.04em;
+}
 #hist li.day:first-child{padding-top:0}
-#hist .t{color:var(--dim);font-size:11px;flex:none;width:42px}
+#hist .t{color:var(--dim);font-size:12px;flex:none;width:44px}
 #hist .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#hist a{text-decoration:none}
-#log{list-style:none;margin:0;padding:0;max-height:200px;overflow:auto;font-size:12px}
-#log li{padding:3px 0;color:var(--dim);border-bottom:1px dashed var(--line)}
+#hist a{color:var(--fg)}
+
+#log{list-style:none;margin:0;padding:0;max-height:220px;overflow:auto;
+  font-size:12px;line-height:1.5;letter-spacing:-.022em}
+#log li{padding:4px 0;color:var(--dim);border-bottom:1px solid var(--line)}
 #log li:last-child{border-bottom:none}
-#log .ok{color:var(--ok)} #log .warn{color:var(--warn)} #log .err{color:var(--err)}
-label.chk{display:flex;gap:8px;align-items:center;cursor:pointer}
-label.chk input{width:auto}
-details summary{cursor:pointer;color:var(--dim);font-size:12px}
-details .stack{margin-top:10px}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--accent);
-  color:var(--accent-fg);padding:10px 20px;border-radius:99px;font-weight:700;
-  opacity:0;transition:opacity .2s;pointer-events:none}
+#log .ok{color:var(--fg)}
+#log .warn{color:var(--mist)}
+#log .err{color:var(--pink-deep)}
+
+/* ---------- こまごま ---------- */
+
+label.chk{display:flex;gap:10px;align-items:center;cursor:pointer;font-size:14px;letter-spacing:-.022em}
+label.chk input{width:auto;accent-color:var(--pink)}
+
+details summary{
+  cursor:pointer;color:var(--pink-deep);font-size:14px;letter-spacing:-.022em;
+  list-style:none;padding:var(--s4) 0;
+}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"＋ ";font-weight:400}
+details[open] summary::before{content:"− "}
+details summary:hover{text-decoration:underline}
+details .stack{margin-top:var(--s12)}
+
+.toast{
+  position:fixed;bottom:var(--s24);left:50%;transform:translateX(-50%);
+  background:var(--carbon);color:var(--frost);
+  padding:12px var(--s24);border-radius:var(--r-pill);
+  font-size:14px;font-weight:400;letter-spacing:-.022em;
+  opacity:0;transition:opacity .2s;pointer-events:none;
+}
 .toast.show{opacity:1}
-</style>

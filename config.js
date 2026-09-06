@@ -22,8 +22,8 @@ window.RAIDPANEL_CONFIG = {
   /* 通知音を鳴らすか */
   SOUND: true,
 
-  /* 見た目 : "night" / "pastel" / "mono" */
-  THEME: "night",
+  /* 見た目 : "light"（白基調・既定） / "dark"（OBSのドック向け） */
+  THEME: "light",
 
   /* お礼ポストのひな形。{name} {login} {count} が置き換わります。 */
   THANKS_TEMPLATE: "{name}さん、{count}人でのレイドありがとうございました！\nまた遊びに行きます\nhttps://twitch.tv/{login}"

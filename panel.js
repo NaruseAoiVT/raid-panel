@@ -15,7 +15,7 @@ function mkey(k){ return MODE === 'dock' ? k + '.dock' : k; }
 /* ---------- 設定 ---------- */
 var DEFAULTS = {
   CLIENT_ID: '', REDIRECT_URI: '', CHANNEL: '',
-  AUTO_SHOUTOUT: true, SOUND: true, THEME: 'night',
+  AUTO_SHOUTOUT: true, SOUND: true, THEME: 'light',
   THANKS_TEMPLATE: '{name}さん、{count}人でのレイドありがとうございました！\nhttps://twitch.tv/{login}'
 };
 var CFG = Object.assign({}, DEFAULTS, window.RAIDPANEL_CONFIG || {});
@@ -62,7 +62,8 @@ var el = {};
 var missing = Object.keys(el).filter(function(k){ return !el[k]; });
 if(missing.length){
   document.body.insertAdjacentHTML('afterbegin',
-    '<div style="padding:12px;background:#f2685c;color:#fff;font-weight:700">' +
+    '<div style="padding:16px;background:#CC0052;color:#fff;font-weight:600;' +
+    'font-family:-apple-system,system-ui,sans-serif">' +
     '画面の部品が足りません：' + missing.join(', ') + '</div>');
   throw new Error('missing elements: ' + missing.join(','));
 }
@@ -516,7 +517,9 @@ function render(){
   if(!r) return;
 
   el.cAv.src = r.avatar || 'data:image/svg+xml;utf8,' +
-    encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="88" height="88"><rect width="88" height="88" fill="#2a2438"/></svg>');
+    // 中身は透明にして、CSSの背景（--fill）を透かせる。
+    // 色を焼き込むと、ダークにしたときだけ丸が白く浮いてしまう
+    encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"/>');
   el.cName.textContent = r.displayName;
   el.cCnt.textContent = r.viewers;
   el.cLogin.textContent = r.login;
@@ -681,6 +684,8 @@ function downloadCsv(){
 
 /* ---------- 起動 ---------- */
 function applyTheme(){
+  // 面の色だけを入れ替える2状態。以前の3種類の配色から戻ってきた値も light に寄せる
+  S.theme = S.theme === 'dark' ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', S.theme);
   LS.set(mkey('theme'), S.theme);
 }
@@ -708,6 +713,7 @@ function boot(){
   }
 
   el.obsBadge.hidden = !IN_OBS;
+  el.btnTheme.textContent = S.theme === 'dark' ? 'ライト' : 'ダーク';
 
   renderHistory();
   validateToken();
@@ -732,9 +738,9 @@ el.btnToken.onclick = function(){
   validateToken();
 };
 el.btnTheme.onclick = function(){
-  var list = ['night','pastel','mono'];
-  S.theme = list[(list.indexOf(S.theme) + 1) % list.length];
+  S.theme = S.theme === 'dark' ? 'light' : 'dark';
   applyTheme();
+  el.btnTheme.textContent = S.theme === 'dark' ? 'ライト' : 'ダーク';
 };
 el.btnTest.onclick = function(){
   onRaid({
