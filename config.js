@@ -6,7 +6,7 @@ window.RAIDPANEL_CONFIG = {
 
   /* Twitch Developer Console で発行した Client ID を貼る（必須）
      https://dev.twitch.tv/console/apps  */
-  CLIENT_ID: "",
+  CLIENT_ID: "uar47an2wkij1w69dlkx0d04tq5stb",
 
   /* Twitch アプリに登録した「OAuth リダイレクト URL」と完全に同じ文字列。
      空にしておくと、今このページを開いている URL を自動で使います。
