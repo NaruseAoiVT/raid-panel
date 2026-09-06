@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAID PANEL — OBSドック</title>
+<link rel="stylesheet" href="panel.css">
+<style>
+/* OBSのカスタムブラウザドック向け。幅300pxでも読める1カラムに寄せる */
+body{font-size:13px}
+header{padding:8px 10px;gap:6px 10px;flex-wrap:wrap}
+header h1{font-size:11px;letter-spacing:.12em;width:100%}
+header .sp{display:none}
+header button{padding:5px 10px;font-size:12px}
+.dot{font-size:11px}
+main{display:block;padding:10px}
+.panel{padding:12px;margin-bottom:10px;border-radius:12px}
+.panel h2{margin-bottom:8px}
+button{padding:7px 11px;border-radius:7px}
+#empty{min-height:140px;gap:6px}
+#empty .big{font-size:22px}
+#empty .sub{display:none}
+#card .top{gap:12px}
+#card img.av{width:56px;height:56px;border-width:2px}
+#card .name{font-size:20px}
+.meta{grid-template-columns:74px 1fr;font-size:12px;margin-top:10px}
+.linkbtn{font-size:15px;padding:13px;margin-top:12px}
+.linkbtn small{font-size:11px}
+#soStatus{font-size:12px;padding:8px 10px}
+textarea#thanks{height:78px;font-size:12px}
+#hist{max-height:180px}
+#log{max-height:130px}
+details{margin-top:2px}
+.warn{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--panel2);
+  border-left:3px solid var(--warn);font-size:11px;color:var(--dim);line-height:1.5}
+</style>
+</head>
+<body data-mode="dock">
+
+<header>
+  <h1>RAID PANEL — OBSドック</h1>
+  <span class="dot" id="dChat"><i></i>チャット</span>
+  <span class="dot" id="dEs"><i></i>Event</span>
+  <span class="dot" id="dAuth"><i></i><span id="authName">未ログイン</span></span>
+  <span class="muted" id="obsBadge" hidden>OBS</span>
+  <span class="sp"></span>
+  <button class="ghost" id="btnTheme">配色</button>
+  <button class="ghost" id="btnTest">テスト</button>
+</header>
+
+<main>
+  <div class="panel">
+    <div id="empty">
+      <div class="big">WAITING</div>
+      <div>レイドが来るとここに出ます。</div>
+      <div class="sub muted">この画面はOBSに映していなければ配信には出ません。</div>
+    </div>
+
+    <article id="card" hidden>
+      <div class="top">
+        <img class="av" id="cAv" alt="">
+        <div>
+          <div class="name" id="cName"></div>
+          <div><span class="cnt" id="cCnt"></span> 人を連れてきました</div>
+        </div>
+      </div>
+
+      <dl class="meta">
+        <dt>チャンネル</dt><dd id="cLogin"></dd>
+        <dt>タイトル</dt><dd id="cTitle">—</dd>
+        <dt>カテゴリ</dt><dd id="cGame">—</dd>
+        <dt>プロフィール</dt><dd id="cDesc">—</dd>
+      </dl>
+
+      <a class="linkbtn" id="cLink" href="#" target="_blank" rel="noopener">
+        相手の配信を開く ↗
+        <small id="cUrl"></small>
+      </a>
+
+      <div id="soStatus">—</div>
+      <div class="row" style="margin-top:8px">
+        <button class="primary" id="btnSo">シャウトアウトを送る</button>
+        <button id="btnCopyUrl">URLをコピー</button>
+        <button id="btnCopyThanks">お礼文をコピー</button>
+      </div>
+      <textarea id="thanks" spellcheck="false"></textarea>
+    </article>
+  </div>
+
+  <div class="panel">
+    <h2>接続</h2>
+    <div class="stack">
+      <input id="inCh" placeholder="自分のTwitch ID（英数字）" spellcheck="false">
+      <div class="row">
+        <button id="btnConnect">チャット監視を開始</button>
+        <button class="primary" id="btnLogin">Twitchでログイン</button>
+        <button class="ghost" id="btnLogout" hidden>ログアウト</button>
+      </div>
+      <div class="muted" id="authNote"></div>
+
+      <details>
+        <summary>ブラウザ版のログインを引き継ぐ（おすすめ）</summary>
+        <div class="stack">
+          <div class="muted">OBSのドックはブラウザとは別扱いなので、ログインは共有されません。
+            小さな画面でIDとパスワードを打つ代わりに、ブラウザ版で
+            「OBSドック用の引き継ぎコードをコピー」を押して、下に貼り付けてください。
+            <b>このコードはログインそのものです。人に渡さないでください。</b></div>
+          <input id="inHandoff" placeholder="引き継ぎコードを貼り付け" spellcheck="false">
+          <button id="btnHandoffUse">この引き継ぎコードを使う</button>
+          <button class="ghost" id="btnHandoff">このドックのコードをコピー</button>
+          <div class="muted">アクセストークンを直接貼る場合はこちら。
+            必要な権限：moderator:manage:shoutouts</div>
+          <input id="inToken" placeholder="アクセストークンを貼り付け" spellcheck="false">
+          <button id="btnToken">このトークンを使う</button>
+        </div>
+      </details>
+
+      <div class="warn">
+        ブラウザ版とこのドックを<b>同時に開かないでください</b>。
+        送信の待ち時間をそれぞれが別に数えるため、シャウトアウトが二重に飛びます。
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>動作設定</h2>
+    <div class="stack">
+      <label class="chk"><input type="checkbox" id="cbAuto">自動でシャウトアウト</label>
+      <label class="chk"><input type="checkbox" id="cbSound">通知音を鳴らす</label>
+      <label class="chk"><input type="checkbox" id="cbNotify">デスクトップ通知を出す</label>
+      <div class="muted">ドックの通知音は既定で切ってあります。
+        OBSがデスクトップ音声を拾っていると、音が配信に乗るためです。</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>レイド履歴</h2>
+    <ul id="hist"></ul>
+    <div class="row" style="margin-top:8px">
+      <button id="btnCsv">CSVに書き出す</button>
+      <button class="ghost" id="btnClearHist">履歴を消す</button>
+    </div>
+    <div class="muted" id="histNote"></div>
+  </div>
+
+  <div class="panel">
+    <h2>ログ</h2>
+    <ul id="log"></ul>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="panel.js"></script>
+</body>
+</html>
