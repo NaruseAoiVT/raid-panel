@@ -15,7 +15,7 @@ body{font-size:14px}
 header{padding:var(--s12) var(--s16);gap:var(--s8) var(--s12)}
 header h1{width:100%;font-size:17px}
 
-main{display:block;padding:var(--s12)}
+main{display:block;padding:var(--s12) var(--s12) var(--s40)}
 .panel{padding:var(--s16);margin-bottom:var(--s12);border-radius:var(--r-card)}
 .panel h2{margin-bottom:var(--s12)}
 
@@ -39,6 +39,11 @@ textarea#thanks{height:84px;margin-top:var(--s12);font-size:12px}
 #log{max-height:140px}
 
 button{font-size:13px;padding:8px 14px}
+
+.me{padding:10px;gap:10px}
+.me img{width:36px;height:36px}
+.me .n{font-size:14px}
+.credit{right:var(--s12);bottom:var(--s8)}
 button.ghost{font-size:12px;padding:6px 10px}
 
 /* ブラウザ版と同時に開かせないための注意書き */
@@ -53,9 +58,9 @@ button.ghost{font-size:12px;padding:6px 10px}
 
 <header>
   <h1>RAID PANEL — OBSドック</h1>
-  <span class="dot" id="dChat"><i></i>チャット</span>
+  <span class="dot" id="dChat"><i></i>チェッカー</span>
   <span class="dot" id="dEs"><i></i>Event</span>
-  <span class="dot" id="dAuth"><i></i><span id="authName">未ログイン</span></span>
+  <span class="dot" id="dAuth"><i></i><img id="meAvSm" alt="" hidden><span id="authName">未ログイン</span></span>
   <span class="muted" id="obsBadge" hidden>OBS</span>
 </header>
 
@@ -101,9 +106,18 @@ button.ghost{font-size:12px;padding:6px 10px}
   <div class="panel">
     <h2>接続</h2>
     <div class="stack">
+      <div class="me" id="meCard" hidden>
+        <img id="meAv" alt="">
+        <div class="who">
+          <div class="n" id="meName"></div>
+          <div class="i" id="meLogin"></div>
+        </div>
+        <span class="badge">ログイン中</span>
+      </div>
       <input id="inCh" placeholder="自分のTwitch ID（英数字）" spellcheck="false">
+      <div class="muted">ログイン中は、ログインしたアカウントに固定されます。</div>
       <div class="row">
-        <button id="btnConnect">チャット監視を開始</button>
+        <button id="btnConnect">RAIDチェッカーを起動</button>
         <button class="primary" id="btnLogin">Twitchでログイン</button>
         <button class="ghost" id="btnLogout" hidden>ログアウト</button>
       </div>
@@ -165,6 +179,8 @@ button.ghost{font-size:12px;padding:6px 10px}
 </main>
 
 <div class="toast" id="toast"></div>
+
+<a class="credit" id="credit" href="https://x.com/Naruse__Aoi" target="_blank" rel="noopener">Create by NaruseAoi</a>
 
 <script src="config.js"></script>
 <script src="panel.js"></script>

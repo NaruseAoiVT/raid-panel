@@ -43,6 +43,21 @@ ok('index.html は wide',
 ok('dock.html は dock',
    /<body data-mode="dock">/.test(fs.readFileSync('dock.html', 'utf8')));
 
+console.log('--- 接続の後始末 ---');
+// 後始末を外さずに閉じると、古い接続のoncloseが新しい接続を巻き込んで
+// つなぎ直しを永久に繰り返す。実際に一度これで無限ループになった
+ok('closeSocket を通して閉じている', js.includes('function closeSocket('));
+ok('生の close() を直接呼んでいない',
+   (js.match(/\.close\(\)/g) || []).length === 1,
+   'close() は closeSocket の中の1回だけであるべき');
+ok('ircConnect が closeSocket を使う', /ircWanted = true;\s*\n\s*closeSocket\(irc\);/.test(js));
+ok('esConnect が closeSocket を使う', /esWanted = true;\s*\n\s*closeSocket\(es\);/.test(js));
+
+console.log('--- 文言 ---');
+for (const file of ['index.html', 'dock.html', 'panel.js']) {
+  ok(file + ' に「監視」が残っていない', !fs.readFileSync(file, 'utf8').includes('監視'));
+}
+
 console.log('--- 設定 ---');
 const cfg = fs.readFileSync('config.js', 'utf8');
 ok('CLIENT_ID が入っている', /CLIENT_ID:\s*"[a-z0-9]{20,}"/.test(cfg));

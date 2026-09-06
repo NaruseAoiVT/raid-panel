@@ -10,9 +10,9 @@
 
 <header>
   <h1>RAID PANEL</h1>
-  <span class="dot" id="dChat"><i></i>チャット監視</span>
+  <span class="dot" id="dChat"><i></i>RAIDチェッカー</span>
   <span class="dot" id="dEs"><i></i>EventSub</span>
-  <span class="dot" id="dAuth"><i></i><span id="authName">未ログイン</span></span>
+  <span class="dot" id="dAuth"><i></i><img id="meAvSm" alt="" hidden><span id="authName">未ログイン</span></span>
   <span class="muted" id="obsBadge" hidden>OBS</span>
   <span class="sp"></span>
   <button class="ghost" id="btnTheme">配色</button>
@@ -66,12 +66,21 @@
     <div class="panel">
       <h2>接続</h2>
       <div class="stack">
+        <div class="me" id="meCard" hidden>
+          <img id="meAv" alt="">
+          <div class="who">
+            <div class="n" id="meName"></div>
+            <div class="i" id="meLogin"></div>
+          </div>
+          <span class="badge">ログイン中</span>
+        </div>
         <div>
-          <div class="muted" style="margin-bottom:4px">監視するチャンネル名（英数字のID）</div>
+          <div class="muted" style="margin-bottom:4px">自分のチャンネル（英数字のID）</div>
           <input id="inCh" placeholder="例：naruse_aoi" spellcheck="false">
+          <div class="muted" style="margin-top:4px">ログイン中は、ログインしたアカウントに固定されます。</div>
         </div>
         <div class="row">
-          <button id="btnConnect">チャット監視を開始</button>
+          <button id="btnConnect">RAIDチェッカーを起動</button>
           <button class="primary" id="btnLogin">Twitchでログイン</button>
           <button class="ghost" id="btnLogout" hidden>ログアウト</button>
         </div>
@@ -126,6 +135,8 @@
 </main>
 
 <div class="toast" id="toast"></div>
+
+<a class="credit" id="credit" href="https://x.com/Naruse__Aoi" target="_blank" rel="noopener">Create by NaruseAoi</a>
 
 <script src="config.js"></script>
 <script src="panel.js"></script>

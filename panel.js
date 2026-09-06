@@ -50,12 +50,18 @@ var S = {
 
 /* ---------- DOM ---------- */
 var $ = function(id){ return document.getElementById(id); };
+
+// 中身は透明にして、CSSの背景（--fill）を透かせる。
+// 色を焼き込むと、ダークにしたときだけ丸が白く浮いてしまう
+var AVATAR_BLANK = 'data:image/svg+xml;utf8,' +
+  encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"/>');
 var el = {};
 ['dChat','dEs','dAuth','authName','authNote','btnTheme','btnTest','empty','card','cAv','cName','cCnt',
  'cLogin','cTitle','cGame','cDesc','cLink','cUrl','soStatus','btnSo','btnCopyUrl','btnCopyThanks','thanks',
  'inCh','btnConnect','btnLogin','btnLogout','inToken','btnToken','cbAuto','cbSound','cbNotify',
  'hist','btnCsv','btnClearHist','histNote','log','toast',
- 'btnHandoff','inHandoff','btnHandoffUse','obsBadge'].forEach(function(k){ el[k] = $(k); });
+ 'btnHandoff','inHandoff','btnHandoffUse','obsBadge',
+ 'meCard','meAv','meAvSm','meName','meLogin','credit'].forEach(function(k){ el[k] = $(k); });
 
 // index.html と dock.html で部品がずれると、原因の分かりにくい壊れ方をする。
 // 起動時に足りない部品を画面に出して止める
@@ -121,7 +127,23 @@ function desktopNotify(raid){
   try{ new Notification('レイドが来ました', { body: raid.displayName + ' さん / ' + raid.viewers + '人' }); }catch(e){}
 }
 
-/* ---------- Twitch IRC（認証なしでレイドを検出） ---------- */
+/* ---------- 接続の後始末 ---------- */
+
+// 古い接続を閉じるときは、後始末の処理を先に外してから閉じる。
+// 付けたまま閉じると onclose の「切れたからつなぎ直す」が走り、
+// たった今作った新しい接続まで巻き込んで永久に繰り返してしまう
+function closeSocket(sock){
+  if(!sock) return;
+  try{
+    sock.onopen = null;
+    sock.onmessage = null;
+    sock.onclose = null;
+    sock.onerror = null;
+    sock.close();
+  }catch(e){}
+}
+
+/* ---------- Twitch IRC（認証なしでレイドを受け取る） ---------- */
 var irc = null, ircBackoff = 1000, ircWanted = false;
 
 function parseTags(raw){
@@ -138,7 +160,7 @@ function parseTags(raw){
 function ircConnect(){
   if(!S.channel){ log('チャンネル名が未入力です', 'warn'); return; }
   ircWanted = true;
-  try{ if(irc) irc.close(); }catch(e){}
+  closeSocket(irc);
   irc = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
   irc.onopen = function(){
     irc.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
@@ -146,7 +168,7 @@ function ircConnect(){
     irc.send('JOIN #' + S.channel.toLowerCase());
     ircBackoff = 1000;
     setDot(el.dChat, true);
-    log('チャット監視に接続しました（#' + S.channel + '）', 'ok');
+    log('RAIDチェッカーを起動しました（#' + S.channel + '）', 'ok');
   };
   irc.onmessage = function(ev){
     String(ev.data).split('\r\n').forEach(function(line){ if(line) handleIrcLine(line); });
@@ -154,7 +176,7 @@ function ircConnect(){
   irc.onclose = function(){
     setDot(el.dChat, false);
     if(ircWanted){
-      log('チャット監視が切断されました。' + Math.round(ircBackoff/1000) + '秒後に再接続します', 'warn');
+      log('接続が切れました。' + Math.round(ircBackoff/1000) + '秒後につなぎ直します', 'warn');
       setTimeout(ircConnect, ircBackoff);
       ircBackoff = Math.min(ircBackoff * 2, 30000);
     }
@@ -213,7 +235,7 @@ var es = null, esWanted = false, esBackoff = 1000, esSession = null;
 function esConnect(url){
   if(!S.token || !S.me) return;
   esWanted = true;
-  try{ if(es) es.close(); }catch(e){}
+  closeSocket(es);
   es = new WebSocket(url || 'wss://eventsub.wss.twitch.tv/ws');
   es.onmessage = function(ev){
     var m;
@@ -260,7 +282,7 @@ function esSubscribe(){
       transport: { method: 'websocket', session_id: esSession }
     }
   }).then(function(res){
-    if(res.ok){ setDot(el.dEs, true); log('EventSubでレイド監視を開始しました', 'ok'); }
+    if(res.ok){ setDot(el.dEs, true); log('EventSubの受信を開始しました', 'ok'); }
     else { res.text().then(function(t){ log('EventSubの購読に失敗：' + res.status + ' ' + t, 'warn'); }); }
   }).catch(function(){});
 }
@@ -287,22 +309,20 @@ function login(){
 function onTokenInvalid(){
   S.token = null; S.me = null; S.scopes = [];
   LS.del('token');
-  esWanted = false; try{ if(es) es.close(); }catch(e){}
-  setDot(el.dEs, false); setDot(el.dAuth, false);
-  el.authName.textContent = '未ログイン';
-  el.btnLogout.hidden = true; el.btnLogin.hidden = false;
+  esWanted = false; closeSocket(es); es = null;
+  setDot(el.dEs, false);
   el.authNote.textContent = 'ログインが切れました。もう一度ログインしてください。';
-  log('アクセストークンが無効です。ログインし直してください', 'err');
+  renderAuth();
+  log('ログインの期限が切れました。もう一度ログインしてください', 'err');
   renderSoStatus();
 }
 function logout(){
-  esWanted = false; try{ if(es) es.close(); }catch(e){}
+  esWanted = false; closeSocket(es); es = null;
   S.token = null; S.me = null; S.scopes = [];
   LS.del('token');
-  setDot(el.dAuth, false); setDot(el.dEs, false);
-  el.authName.textContent = '未ログイン';
-  el.btnLogout.hidden = true; el.btnLogin.hidden = false;
+  setDot(el.dEs, false);
   el.authNote.textContent = '';
+  renderAuth();
   log('ログアウトしました');
   renderSoStatus();
 }
@@ -313,21 +333,40 @@ function validateToken(){
   }).then(function(r){
     if(!r.ok){ onTokenInvalid(); return false; }
     return r.json().then(function(d){
-      S.me = { id: d.user_id, login: d.login, display_name: d.login };
+      S.me = { id: d.user_id, login: d.login, display_name: d.login, avatar: '' };
       S.scopes = d.scopes || [];
-      setDot(el.dAuth, true);
-      el.authName.textContent = d.login;
-      el.btnLogout.hidden = false; el.btnLogin.hidden = true;
-      if(!S.channel){ S.channel = d.login; LS.set('channel', d.login); el.inCh.value = d.login; }
+
+      // ログインした本人のチャンネルに必ず合わせる。
+      // 別チャンネルのまま使うと、レイドは見えてもシャウトアウトが送れない
+      if(S.channel !== d.login){
+        var before = S.channel;
+        S.channel = d.login;
+        LS.set('channel', S.channel);
+        if(before) log('チャンネルを ' + d.login + ' に合わせました', 'warn');
+        ircConnect();
+      }
+
       if(S.scopes.indexOf('moderator:manage:shoutouts') < 0){
         el.authNote.textContent = '⚠ シャウトアウトの権限がありません。ログインし直してください。';
         log('権限 moderator:manage:shoutouts がありません', 'warn');
       } else {
-        el.authNote.textContent = 'ログイン済み。公式シャウトアウトを送れます。';
+        el.authNote.textContent = '公式シャウトアウトを送れる状態です。';
       }
-      log('ログイン確認：' + d.login, 'ok');
+      log('ログインを確認しました：' + d.login, 'ok');
+
+      renderAuth();
       esConnect();
       renderSoStatus();
+
+      // 表示名とアイコンは Helix でしか取れない。取れなくてもログインは有効なので待たない
+      helixJson('users', { id: d.user_id }).then(function(u){
+        var me = u && u.data && u.data[0];
+        if(!me) return;
+        S.me.display_name = me.display_name || d.login;
+        S.me.avatar = me.profile_image_url || '';
+        renderAuth();
+      });
+
       return true;
     });
   }).catch(function(){ return false; });
@@ -474,6 +513,32 @@ function sendShoutout(raid){
   });
 }
 
+/* ---------- ログイン状態の描画 ---------- */
+
+// ログイン中はチャンネル欄を触らせない。
+// 別のチャンネルを見ていると、シャウトアウトの送り主と食い違って送信に失敗する
+function renderAuth(){
+  var on = !!(S.token && S.me);
+  var name = on ? (S.me.display_name || S.me.login) : '';
+
+  setDot(el.dAuth, on);
+  el.authName.textContent = on ? name : '未ログイン';
+  el.meAvSm.hidden = !(on && S.me.avatar);
+  if(on && S.me.avatar) el.meAvSm.src = S.me.avatar;
+
+  el.meCard.hidden = !on;
+  if(on){
+    el.meAv.src = S.me.avatar || AVATAR_BLANK;
+    el.meName.textContent = name;
+    el.meLogin.textContent = '@' + S.me.login;
+    el.inCh.value = S.channel;
+  }
+
+  el.inCh.disabled = on;
+  el.btnLogin.hidden = on;
+  el.btnLogout.hidden = !on;
+}
+
 /* ---------- OBSドックへのログイン引き継ぎ ---------- */
 
 // OBSのドックはChromeとは別のブラウザなので、ログインを共有できない。
@@ -516,10 +581,7 @@ function render(){
   el.card.hidden = !r;
   if(!r) return;
 
-  el.cAv.src = r.avatar || 'data:image/svg+xml;utf8,' +
-    // 中身は透明にして、CSSの背景（--fill）を透かせる。
-    // 色を焼き込むと、ダークにしたときだけ丸が白く浮いてしまう
-    encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"/>');
+  el.cAv.src = r.avatar || AVATAR_BLANK;
   el.cName.textContent = r.displayName;
   el.cCnt.textContent = r.viewers;
   el.cLogin.textContent = r.login;
@@ -715,6 +777,7 @@ function boot(){
   el.obsBadge.hidden = !IN_OBS;
   el.btnTheme.textContent = S.theme === 'dark' ? 'ライト' : 'ダーク';
 
+  renderAuth();
   renderHistory();
   validateToken();
   if(S.channel) ircConnect();
@@ -767,14 +830,18 @@ el.btnHandoffUse.onclick = function(){ useHandoff(el.inHandoff.value); };
 // OBSのドックはCEFなので、新しいタブを開けないことがある。
 // 押した時点でURLはコピーしておき、開けなくても貼り付けで辿り着けるようにする
 if(MODE === 'dock'){
-  el.cLink.addEventListener('click', function(ev){
-    ev.preventDefault();
-    if(!S.current) return;
-    var url = 'https://twitch.tv/' + S.current.login;
-    copy(url);
-    var w = null;
-    try{ w = window.open(url, '_blank'); }catch(e){}
-    toast(w ? '開きました（URLもコピー済み）' : 'URLをコピーしました。ブラウザに貼り付けてください');
+  [el.cLink, el.credit].forEach(function(a){
+    a.addEventListener('click', function(ev){
+      ev.preventDefault();
+      var url = a === el.cLink
+        ? (S.current ? 'https://twitch.tv/' + S.current.login : '')
+        : a.href;
+      if(!url) return;
+      copy(url);
+      var w = null;
+      try{ w = window.open(url, '_blank'); }catch(e){}
+      toast(w ? '開きました（URLもコピー済み）' : 'URLをコピーしました。ブラウザに貼り付けてください');
+    });
   });
 }
 el.btnCopyThanks.onclick = function(){ copy(el.thanks.value); };
